@@ -20,10 +20,15 @@ class VacancyModel(db.Model):
 
 
 vac_args = reqparse.RequestParser()
-
 vac_args.add_argument("name", type=str, required=True )
 vac_args.add_argument("company", type=str, required=True )
 vac_args.add_argument("salary", type=int, required=False )
+
+
+vac_update_args = reqparse.RequestParser()
+vac_update_args.add_argument("name", type=str)
+vac_update_args.add_argument("company", type=str)
+vac_update_args.add_argument("salary", type=int)
 
 
 def abort_if_not_exists(vacancy_id):
@@ -53,6 +58,26 @@ class Vacancy(Resource):
         db.session.add(vacancy)
         db.session.commit()
         return vacancy, 201
+
+    @marshal_with(resource_fields)
+    def patch(self, vacancy_id):
+        args = vac_update_args.parse_args()
+        vacancy =  VacancyModel.query.filter_by(id=int(vacancy_id)).first()
+        if not vacancy:
+            abort(404, message = 'Vacancy does not exist')
+
+        if args["name"]:
+            vacancy.name = args["name"]
+
+        if args["company"]:
+            vacancy.company = args["company"]
+
+        if args["salary"]:
+            vacancy.salary = args["salary"]
+
+        db.session.commit()
+        return vacancy, 204
+
 
 api.add_resource(Vacancy, "/vacancy/<int:vacancy_id>", '/vacancy')
 
